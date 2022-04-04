@@ -30,32 +30,26 @@ void delete_backing_store(){
 }
 
 
-/*  returns: error code, 12: couldnt open file in backing store   
+/*  
+Takes in filename to be stored in backing store and puts it there
+
+returns: error code, 12: couldnt open file in backing store   
 */ 
-int load_script_to_backing_store(const char *filename){
+int load_script_to_backing_store(const char *filename, char *filepath){
     FILE* fp, *target;
-    char* target_file = (char*)calloc(1,150);
     int error_code = 0;
     char ch;// source_file[20], target_file[20];
-    size_t current_directory_size = 9999;
-    char* str1 = "/backingStore/";
-
+    
     fp = fopen(filename, "rt");
     if(fp == NULL){
         error_code = 11; // 11 is the error code for file does not exist
         return error_code;
     }
 
-    //might bug
-    getcwd(target_file, current_directory_size);
-    strncat(target_file, str1, 15);
-    strncat(target_file, filename, 999);
-
-
-    target = fopen(target_file, "w");
+    target = fopen(filepath, "w");
     if (target == NULL) {
         fclose(fp);
-        error_code = 12;
+        error_code = 12; // 12 is the error code for file couldnt be stored
         return error_code;
     }
     while ((ch = fgetc(fp)) != EOF){
@@ -65,23 +59,36 @@ int load_script_to_backing_store(const char *filename){
     fclose(target);
     return error_code; 
 }
-    
 
+int count_file_lines(char *filename){
+    // count the number of lines in the file called filename                                    
+    FILE *fp = fopen(filename,"r");
+    int ch=0;
+    int lines=0;
 
-int main(int argc, char *argv[]) {
-    /*char* target_file = (char*)calloc(1,150);
-    size_t current_directory_size = 9999;
-    char* filename = "file2.txt";
-    char* str1 = "/backingStore/";
-    getcwd(target_file, current_directory_size);
-    strncat(target_file, str1, 15);
-    strncat(target_file, filename, 999);
-*/
-   
-   //load_script_to_backing_store("file1.txt");
-
+    if (fp == NULL){
+        return -1;
+    }
+    lines++;
+    while ((ch = fgetc(fp)) != EOF){
+        if (ch == '\n'){
+            lines++;
+        }
+    }
+    fclose(fp);
+    return lines;
 
 }
+
+
+
+/*
+int main(int argc, char *argv[]) {
+    int lines = count_file_lines("file1.txt");
+    printf("%d", lines);
+
+}
+*/
 
 
 

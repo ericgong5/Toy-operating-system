@@ -104,13 +104,48 @@ int get_frame_store_length(){
 int find_empty_frame(){
 	for (int i = 0; i < FRAME_STORE_LENGTH;){
         if(strcmp(framestore[i].var,"none") == 0){
-            start = i;
-            break;
+            return i;;
         }
         i = i + 3;
     }
 	return -1;
 }
+
+//edge case of if program_counter is out of bounds
+
+// frame_line = index in frame store where to add frame
+// program_counter = line of next program to be loaded (starts at 0)
+// filename = name of file in backing store to be loaded from 
+int load_frame_from_disk(int frame_line, int program_counter, const char *filename, const char *filepath){
+	int errCode = 0;
+	FILE* target_file;
+    char line[SHELL_MEM_LENGTH];
+
+	target_file = fopen(filepath, "rt");
+    if(target_file == NULL){
+        errCode = 12; // 11 is the error code for file does not exist
+        return errCode;
+    }
+
+	//skip to the line that we want
+	for(int i = 0; i < program_counter;i++){
+        fgets(line, 999, target_file);
+	}
+	//copy line into frame store
+	for(int j = frame_line; j < frame_line + 3; j++){
+		if(feof(target_file)){
+			errCode = -1;
+            break;
+        }else{
+			fgets(line, 999, target_file);
+			framestore[j].var = strdup(filename);
+    		framestore[j].value = strdup(line);
+		}
+	}
+	fclose(target_file);
+	return errCode;
+}
+
 void frame_set_value(char *var_in, char *value_in) {
 
 	int i;
@@ -159,7 +194,6 @@ void clean_frame_store(int start, int end){
 		framestore[i].value = "none";
     }
 }
-
 
 
 /*
@@ -225,3 +259,30 @@ int add_file_to_mem(FILE* fp, int* pStart, int* pEnd, char* fileID)
 
     return error_code;
 }
+
+/*
+int main(int argc, char *argv[]) {
+	/*
+	mem_init();
+	char *filename = "file1.txt";
+	char *filepath = "/home/2020/egong1/A3/backingStore/file1.txt";
+	load_frame_from_disk(0, 0, filename, filepath);
+	char *line0 = frame_get_value_by_line(0);
+	char *line1 = frame_get_value_by_line(1);
+	char *line2 = frame_get_value_by_line(2);
+	printf("%s\n", line0);
+	printf("%s\n", line1);
+	printf("%s\n", line2);
+	
+	load_frame_from_disk(3, 3, filename, filepath);
+	char *line3 = frame_get_value_by_line(3);
+	char *line4 = frame_get_value_by_line(4);
+	char *line5 = frame_get_value_by_line(5);
+	printf("%s\n", line3);
+	printf("%s\n", line4);
+	printf("%s\n", line5);
+
+
+
+}
+*/
