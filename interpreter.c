@@ -1,11 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h> 
+#include <unistd.h>
+#include <stdbool.h>
 
 #include "harddisk.h"
 #include "shellmemory.h"
 #include "shell.h"
 #include "kernel.h"
+#include "pcb.h"
+
 
 int MAX_ARGS_SIZE = 7;
 
@@ -14,6 +18,7 @@ int quit();
 int badcommand();
 int badcommandTooManyTokens();
 int bad_command_file_does_not_exist();
+int badcommand_file_could_not_be_stored();
 int badcommand_scheduling_policy_error();
 int badcommand_no_mem_space();
 int badcommand_ready_queue_full();
@@ -130,6 +135,11 @@ int bad_command_file_does_not_exist(){
 	return 1;
 }
 
+int badcommand_backing_store_file_does_not_exist(){
+	printf("%s\n", "Bad command: File in backing store not found");
+	return 1;
+}
+
 int badcommand_scheduling_policy_error(){
 	printf("%s\n", "Bad command: scheduling policy incorrect");
 	return 1;
@@ -162,6 +172,8 @@ int handleError(int error_code){
 		return badcommand_ready_queue_full();
 	}else if (error_code == 15){
 		return badcommand_scheduling_policy_error();
+	}else if (error_code == 12){
+		return badcommand_backing_store_file_does_not_exist();
 	}else{
 		return 0;
 	}
@@ -180,19 +192,60 @@ int print(char* var){
 int run(char* script){
 	//errCode 11: bad command file does not exist
 	int errCode = 0;
+    char* target_file = (char*)calloc(1,150);
+	size_t current_directory_size = 9999;
+    char* temp = "/backingStore/";
+	int frame_store_index, program_counter, end_of_program;
+
+	//might bug <- works for now
+	//creates the file path for the backing store file
+    getcwd(target_file, current_directory_size);
+    strncat(target_file, temp, 15);
+    strncat(target_file, script, 999);
 
 	//load script into backing store
-	errCode = load_script_to_backing_store(script);
-
-	//load script into shell
-	errCode = myinit(script);
-	if(errCode == 11){
+	errCode = load_script_to_backing_store(script, target_file);
+	if(errCode == 11 | errCode == 12){
 		return handleError(errCode);
 	}
 
-	//run with FCFS
-	scheduler(0);
+	//find start and end for PCB <- will have to change when not contiguous
+	frame_store_index = find_empty_frame();
+	int end = count_file_lines(target_file);
+	// make pcb for loaded program and put in queue
+	PCB* newPCB = makePCB(frame_store_index,end,script);
+    ready_queue_add_to_end(newPCB);
 
+
+	// takes in pc of where it left off and end of program if pc starts at 0
+	program_counter = ready_queue_pop(0, false).PC - ready_queue_pop(0, false).start;
+	end_of_program  = ready_queue_pop(0, false).end - ready_queue_pop(0, false).start;
+	// load the page into the frame store
+	while(1){
+		if(program_counter > end_of_program){
+			break;
+		}
+		//do error code <- will become frame fault later
+		frame_store_index = find_empty_frame();
+		/* prob will have to change <- is page fault later
+		if( frame_store_index == -1){
+			errCode = 13; // 13 is the error code for frame out of space
+			return errCode;
+		}
+		*/
+
+		errCode = load_frame_from_disk(frame_store_index, program_counter, script, target_file);
+		if(errCode == -1){ // means reached end of file
+			errCode = 0;
+			break;
+		}
+		program_counter = program_counter + 3;
+	}
+
+	//run with RR <- to be modified prob
+	//scheduler(2);
+
+	free(target_file);
 	return errCode;
 }
 
@@ -262,3 +315,44 @@ int resetmem(){
 	clean_all_mem();
 	return 0;
 }
+
+
+
+/*
+int main(int argc, char *argv[]) {
+	create_backing_store();
+    mem_init();
+	ready_queue_initialize();
+
+	int a = run("file1.txt");
+	int b = run("file2.txt");
+	
+	char *line0 = frame_get_value_by_line(0);
+	char *line1 = frame_get_value_by_line(1);
+	char *line2 = frame_get_value_by_line(2);
+	printf("%s\n", line0);
+	printf("%s\n", line1);
+	printf("%s\n", line2);
+	char *line3 = frame_get_value_by_line(3);
+	char *line4 = frame_get_value_by_line(4);
+	char *line5 = frame_get_value_by_line(5);
+	printf("%s\n", line3);
+	printf("%s\n", line4);
+	printf("%s\n", line5);
+	char *line6 = frame_get_value_by_line(6);
+	char *line7 = frame_get_value_by_line(7);
+	char *line8 = frame_get_value_by_line(8);
+	printf("%s\n", line6);
+	printf("%s\n", line7);
+	printf("%s\n", line8);
+	char *line9 = frame_get_value_by_line(9);
+	char *line10 = frame_get_value_by_line(10);
+	char *line11 = frame_get_value_by_line(11);
+	printf("%s\n", line9);
+	printf("%s\n", line10);
+	printf("%s\n", line11);
+	
+
+}
+
+*/

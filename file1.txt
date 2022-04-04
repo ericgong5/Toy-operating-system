@@ -1,0 +1,4 @@
+testing 1
+test 2
+echo 5
+quit

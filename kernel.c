@@ -312,3 +312,15 @@ int scheduler(int policyNumber){
 
     return error_code;
 }
+
+
+/*
+int main(int argc, char *argv[]) {
+  
+    ready_queue_initialize();
+    int i = ready_queue_pop(0, false).PC;
+    printf("%d", i);
+
+
+}
+*/
