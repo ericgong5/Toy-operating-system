@@ -35,7 +35,7 @@ Takes in filename to be stored in backing store and puts it there
 
 returns: error code, 12: couldnt open file in backing store   
 */ 
-int load_script_to_backing_store(const char *filename, char *filepath){
+int load_script_to_backing_store(const char *filename, char *file_and_path){
     FILE* fp, *target;
     int error_code = 0;
     char ch;// source_file[20], target_file[20];
@@ -46,7 +46,7 @@ int load_script_to_backing_store(const char *filename, char *filepath){
         return error_code;
     }
 
-    target = fopen(filepath, "w");
+    target = fopen(file_and_path, "w");
     if (target == NULL) {
         fclose(fp);
         error_code = 12; // 12 is the error code for file couldnt be stored

@@ -210,23 +210,24 @@ int run(char* script){
 
 	//find start and end for PCB <- will have to change when not contiguous
 	frame_store_index = find_empty_frame();
-	int end = count_file_lines(target_file);
+	int end = count_file_lines(target_file) + frame_store_index - 1;
 	// make pcb for loaded program and put in queue
 	PCB* newPCB = makePCB(frame_store_index,end,script);
     ready_queue_add_to_end(newPCB);
 
 
 	// takes in pc of where it left off and end of program if pc starts at 0
-	program_counter = ready_queue_pop(0, false).PC - ready_queue_pop(0, false).start;
-	end_of_program  = ready_queue_pop(0, false).end - ready_queue_pop(0, false).start;
+	program_counter = newPCB->PC - newPCB->start;
+	end_of_program  = newPCB->end - newPCB->start;
 	// load the page into the frame store
-	while(1){
+	for(int k = 0; k < 2; k++){
 		if(program_counter > end_of_program){
 			break;
 		}
 		//do error code <- will become frame fault later
 		frame_store_index = find_empty_frame();
-		/* prob will have to change <- is page fault later
+		/* prob will have to change
+		^is page fault later or assume enough space for start 2 frames
 		if( frame_store_index == -1){
 			errCode = 13; // 13 is the error code for frame out of space
 			return errCode;
@@ -251,7 +252,7 @@ int run(char* script){
 int exec(char *fname1, char *fname2, char *fname3, char* policy){
 	
 	// Identical files are now permitted in A3
-	///*
+	/*
 	if(fname2!=NULL){
 		if(strcmp(fname1,fname2)==0){
 			return badcommand_same_file_name();
@@ -263,35 +264,171 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 		}
 		
 	}
-	//*/
+	*/
 
-    int error_code = 0;
+    int error_code, errCode = 0;
+	char* target_file = (char*)calloc(1,150);
+	size_t current_directory_size = 9999;
+    char* temp = "/backingStore/";
+	int frame_store_index, program_counter, end_of_program;
 
 	int policyNumber = get_scheduling_policy_number(policy);
 	if(policyNumber == 15){
 		return handleError(policyNumber);
 	}
 
+
+	
+
     if(fname1 != NULL){
-        error_code = myinit(fname1);
+        //error_code = myinit(fname1);
+
+		//might bug <- works for now
+		//creates the file path for the backing store file
+		getcwd(target_file, current_directory_size);
+		strncat(target_file, temp, 15);
+		strncat(target_file, fname1, 999);
+
+		error_code = load_script_to_backing_store(fname1, target_file);
 		if(error_code != 0){
 			return handleError(error_code);
+		}
+
+		//find start and end for PCB <- will have to change when not contiguous
+		frame_store_index = find_empty_frame();
+		int end = count_file_lines(target_file) + frame_store_index - 1;
+		// make pcb for loaded program and put in queue
+		PCB* newPCB = makePCB(frame_store_index, end,fname1);
+		ready_queue_add_to_end(newPCB);
+
+
+		// takes in pc of where it left off and end of program if pc starts at 0
+		program_counter = newPCB->PC - newPCB->start;
+		end_of_program  = newPCB->end - newPCB->start;
+		// load the page into the frame store
+		for(int k = 0; k < 2; k++){
+			if(program_counter > end_of_program){
+				break;
+			}
+			//do error code <- will become frame fault later
+			frame_store_index = find_empty_frame();
+			/* prob will have to change
+			^is page fault later or assume enough space for start 2 frames
+			if( frame_store_index == -1){
+				errCode = 13; // 13 is the error code for frame out of space
+				return errCode;
+			}
+			*/
+
+			errCode = load_frame_from_disk(frame_store_index, program_counter, fname1, target_file);
+			if(errCode == -1){ // means reached end of file
+				errCode = 0;
+				break;
+			}
+			program_counter = program_counter + 3;
 		}
     }
     if(fname2 != NULL){
-        error_code = myinit(fname2);
+        //error_code = myinit(fname2);
+
+		//might bug <- works for now
+		//creates the file path for the backing store file
+		getcwd(target_file, current_directory_size);
+		strncat(target_file, temp, 15);
+		strncat(target_file, fname2, 999);
+		
+		error_code = load_script_to_backing_store(fname2, target_file);
 		if(error_code != 0){
 			return handleError(error_code);
+		}
+
+		//find start and end for PCB <- will have to change when not contiguous
+		frame_store_index = find_empty_frame();
+		int end = count_file_lines(target_file) + frame_store_index - 1;
+		// make pcb for loaded program and put in queue
+		PCB* newPCB = makePCB(frame_store_index, end,fname2);
+		ready_queue_add_to_end(newPCB);
+
+
+		// takes in pc of where it left off and end of program if pc starts at 0
+		program_counter = newPCB->PC - newPCB->start;
+		end_of_program  = newPCB->end - newPCB->start;
+		// load the page into the frame store
+		for(int k = 0; k < 2; k++){
+			if(program_counter > end_of_program){
+				break;
+			}
+			//do error code <- will become frame fault later
+			frame_store_index = find_empty_frame();
+			/* prob will have to change
+			^is page fault later or assume enough space for start 2 frames
+			if( frame_store_index == -1){
+				errCode = 13; // 13 is the error code for frame out of space
+				return errCode;
+			}
+			*/
+
+			errCode = load_frame_from_disk(frame_store_index, program_counter, fname2, target_file);
+			if(errCode == -1){ // means reached end of file
+				errCode = 0;
+				break;
+			}
+			program_counter = program_counter + 3;
 		}
     }
     if(fname3 != NULL){
-        error_code = myinit(fname3);
+        //error_code = myinit(fname3);
+
+		//might bug <- works for now
+		//creates the file path for the backing store file
+		getcwd(target_file, current_directory_size);
+		strncat(target_file, temp, 15);
+		strncat(target_file, fname3, 999);
+		
+		error_code = load_script_to_backing_store(fname3, target_file);
 		if(error_code != 0){
 			return handleError(error_code);
 		}
+
+		//find start and end for PCB <- will have to change when not contiguous
+		frame_store_index = find_empty_frame();
+		int end = count_file_lines(target_file) + frame_store_index - 1;
+		// make pcb for loaded program and put in queue
+		PCB* newPCB = makePCB(frame_store_index, end,fname3);
+		ready_queue_add_to_end(newPCB);
+
+
+		// takes in pc of where it left off and end of program if pc starts at 0
+		program_counter = newPCB->PC - newPCB->start;
+		end_of_program  = newPCB->end - newPCB->start;
+		// load the page into the frame store
+		for(int k = 0; k < 2; k++){
+			if(program_counter > end_of_program){
+				break;
+			}
+			//do error code <- will become frame fault later
+			frame_store_index = find_empty_frame();
+			/* prob will have to change
+			^is page fault later or assume enough space for start 2 frames
+			if( frame_store_index == -1){
+				errCode = 13; // 13 is the error code for frame out of space
+				return errCode;
+			}
+			*/
+
+			errCode = load_frame_from_disk(frame_store_index, program_counter, fname3, target_file);
+			if(errCode == -1){ // means reached end of file
+				errCode = 0;
+				break;
+			}
+			program_counter = program_counter + 3;
+		}
     }
     
+
+
 	scheduler(policyNumber);
+	free(target_file);
 	return error_code;
 }
 
@@ -319,39 +456,19 @@ int resetmem(){
 
 /*
 int main(int argc, char *argv[]) {
-	create_backing_store();
-    mem_init();
-	ready_queue_initialize();
+	int frame_store_index = 4;
+	int end = 13;
+		// make pcb for loaded program and put in queue
+		PCB* newPCB = makePCB(frame_store_index, end,"hi");
 
-	int a = run("file1.txt");
-	int b = run("file2.txt");
-	
-	char *line0 = frame_get_value_by_line(0);
-	char *line1 = frame_get_value_by_line(1);
-	char *line2 = frame_get_value_by_line(2);
-	printf("%s\n", line0);
-	printf("%s\n", line1);
-	printf("%s\n", line2);
-	char *line3 = frame_get_value_by_line(3);
-	char *line4 = frame_get_value_by_line(4);
-	char *line5 = frame_get_value_by_line(5);
-	printf("%s\n", line3);
-	printf("%s\n", line4);
-	printf("%s\n", line5);
-	char *line6 = frame_get_value_by_line(6);
-	char *line7 = frame_get_value_by_line(7);
-	char *line8 = frame_get_value_by_line(8);
-	printf("%s\n", line6);
-	printf("%s\n", line7);
-	printf("%s\n", line8);
-	char *line9 = frame_get_value_by_line(9);
-	char *line10 = frame_get_value_by_line(10);
-	char *line11 = frame_get_value_by_line(11);
-	printf("%s\n", line9);
-	printf("%s\n", line10);
-	printf("%s\n", line11);
-	
+
+		// takes in pc of where it left off and end of program if pc starts at 0
+		int program_counter = newPCB->PC - newPCB->start;
+		int end_of_program  = newPCB->end - newPCB->start;
+
+	printf("%d\n", program_counter);
+	printf("%d\n", end_of_program);
+
 
 }
-
 */
