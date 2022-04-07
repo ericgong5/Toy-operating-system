@@ -101,6 +101,7 @@ int get_frame_store_length(){
 	return FRAME_STORE_LENGTH;
 }
 
+// error code -1 if no empty frame found
 int find_empty_frame(){
 	for (int i = 0; i < FRAME_STORE_LENGTH;){
         if(strcmp(framestore[i].var,"none") == 0){
@@ -112,7 +113,7 @@ int find_empty_frame(){
 }
 
 //edge case of if program_counter is out of bounds
-
+// error code : -1 if end of file
 // frame_line = index in frame store where to add frame
 // program_counter = line of next program to be loaded (starts at 0)
 // filename = name of file in backing store to be loaded from 
@@ -134,7 +135,7 @@ int load_frame_from_disk(int frame_line, int program_counter, const char *filena
 	//copy line into frame store
 	for(int j = frame_line; j < frame_line + 3; j++){
 		if(feof(target_file)){
-			errCode = -1;
+			errCode = -1; // out of lines to copy
             break;
         }else{
 			fgets(line, 999, target_file);
@@ -187,9 +188,9 @@ char* frame_get_value_by_line(int line){
 	return framestore[line].value;
 }
 
-
-void clean_frame_store(int start, int end){
-    for(int i = start; i <= end; i ++){
+// cleans one frame when given the start index
+void clean_one_frame(int start){
+    for(int i = start; i < start + 3; i ++){
         framestore[i].var = "none";
 		framestore[i].value = "none";
     }
