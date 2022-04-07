@@ -1,6 +1,6 @@
 # comp310_A3
 
-CURRENTLY DOING 1.2.1 PART 3
+Eric : CURRENTLY DOING 1.2.2 PART 3
 
 
 PC is the index of the line in the memory
@@ -23,4 +23,9 @@ error code 12 = couldnt open file in backing store
 
 make sure PC is the same for load_frame_from_disk();
 edge case of if PC is out of bounds
+
+load 2 frames at start but let page fault handling up to kernel.c -> scheduler() or cpu.c cpu_run()
+
+
+
 
