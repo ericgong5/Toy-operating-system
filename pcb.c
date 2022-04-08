@@ -8,7 +8,7 @@
 //In this implementation, Pid is the same as file ID 
 PCB* makePCB(int start, int end, char* pid){
     PCB * newPCB = malloc(sizeof(PCB));
-    for (int i = 0; i<10; i++){
+    for (int i = 0; i<100; i++){
         newPCB->pageTable[i] = -1; // initialize pageTable entries to -1 for empty
     }
     newPCB->pid = pid;
@@ -27,7 +27,7 @@ PCB* makePCB(int start, int end, char* pid){
 
 int find_empty_page_table(PCB* pcb){
     for(int i = 0; i < 100; i++){
-        if((*pcb->pageTable) == -1){
+        if((pcb->pageTable[i]) == -1){
             return i;
         }
     }
@@ -36,3 +36,12 @@ int find_empty_page_table(PCB* pcb){
 
 
 
+
+/*
+int main(int argc, char *argv[]) {
+    PCB* newPCB = makePCB(0,10,"hi");
+    newPCB->pageTable[0] = 6;
+    int a = find_empty_page_table(newPCB);
+    printf("%d\n",a);
+}
+*/

@@ -213,15 +213,14 @@ int run(char* script){
 	int end = count_file_lines(target_file);
 	// make pcb for loaded program and put in queue
 	PCB* newPCB = makePCB(0,end,script);
-    ready_queue_add_to_end(newPCB);
 
 
 	// takes in pc of where it left off and end of program if pc starts at 0
 	program_counter = newPCB->PC;
 	//end_of_program  = ready_queue_pop(0, false).end - ready_queue_pop(0, false).start;
 	// load the page into the frame store
-	while(1){
-		if(program_counter > newPCB->end){
+	while(program_counter + 1 <= newPCB->end){
+		if(program_counter + 1 > newPCB->end){
 			break;
 		}
 		//do error code <- will become frame fault later
@@ -247,9 +246,9 @@ int run(char* script){
 		}
 		program_counter = program_counter + 3;
 	}
-
+	ready_queue_add_to_end(newPCB);
 	//run with RR <- to be modified prob
-	//scheduler(2);
+	scheduler(2);
 
 	free(target_file);
 	return errCode;

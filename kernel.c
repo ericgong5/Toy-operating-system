@@ -26,6 +26,11 @@ void ready_queue_initialize()
         (*readyQueue[i]).start = -1;
         (*readyQueue[i]).end = -1;
         (*readyQueue[i]).pid = NULL;
+        (*readyQueue[i]).pageTableIndex = -1;
+        (*readyQueue[i]).frameIndex = -1;
+        for (int j = 0; j<100; j++){
+                (*readyQueue[i]).pageTable[j] = -1;
+        }
         //(*readyQueue[i]).job_length_score = -1;
     }
 }
@@ -37,6 +42,12 @@ void ready_queue_Empty(){
         (*readyQueue[i]).start = -1;
         (*readyQueue[i]).end = -1;
         (*readyQueue[i]).pid = NULL;
+        (*readyQueue[i]).pageTableIndex = -1;
+        (*readyQueue[i]).frameIndex = -1;
+
+        for (int j = 0; j<100; j++){
+                (*readyQueue[i]).pageTable[j] = -1;
+        }
         //(*readyQueue[i]).job_length_score = -1;
     }
 }
@@ -58,12 +69,23 @@ PCB ready_queue_pop(int index, bool inPlace)
             (*readyQueue[i-1]).start = (*readyQueue[i]).start;
             (*readyQueue[i-1]).end = (*readyQueue[i]).end;
             (*readyQueue[i-1]).pid = (*readyQueue[i]).pid;
+            (*readyQueue[i-1]).pageTableIndex = (*readyQueue[i]).pageTableIndex;
+            (*readyQueue[i-1]).frameIndex = (*readyQueue[i]).frameIndex;
+
+            for (int j = 0; j<100; j++){
+                (*readyQueue[i-1]).pageTable[j] = (*readyQueue[i]).pageTable[j];
+            }
             //(*readyQueue[i-1]).job_length_score = (*readyQueue[i]).job_length_score;
         }
         (*readyQueue[QUEUE_LENGTH-1]).PC = -1;
         (*readyQueue[QUEUE_LENGTH-1]).start = -1;
         (*readyQueue[QUEUE_LENGTH-1]).end = -1;
         (*readyQueue[QUEUE_LENGTH-1]).pid = NULL;
+        (*readyQueue[QUEUE_LENGTH-1]).pageTableIndex = -1;
+        (*readyQueue[QUEUE_LENGTH-1]).frameIndex = -1;
+        for (int j = 0; j<100; j++){
+                (*readyQueue[QUEUE_LENGTH-1]).pageTable[j] = -1;
+        }
         //(*readyQueue[QUEUE_LENGTH-1]).job_length_score = -1;
     }
     return head;
@@ -77,6 +99,12 @@ void ready_queue_add_to_end(PCB *pPCB)
             (*readyQueue[i]).start = (*pPCB).start;
             (*readyQueue[i]).end = (*pPCB).end;
             (*readyQueue[i]).pid = (*pPCB).pid;
+            (*readyQueue[i]).pageTableIndex = (*pPCB).pageTableIndex;
+            (*readyQueue[i]).frameIndex = (*pPCB).frameIndex;
+
+            for (int j = 0; j<100; j++){
+                (*readyQueue[i]).pageTable[j] = (*pPCB).pageTable[j];
+            }
             //(*readyQueue[i]).job_length_score = (*pPCB).job_length_score;
             break;
         }
@@ -89,6 +117,12 @@ void ready_queue_add_to_front(PCB *pPCB){
         (*readyQueue[i]).start = (*readyQueue[i-1]).start;
         (*readyQueue[i]).end = (*readyQueue[i-1]).end;
         (*readyQueue[i]).pid = (*readyQueue[i-1]).pid;
+        (*readyQueue[i]).pageTableIndex = (*readyQueue[i-1]).pageTableIndex;
+        (*readyQueue[i]).frameIndex = (*readyQueue[i-1]).frameIndex;
+
+        for (int j = 0; j<100; j++){
+            (*readyQueue[i]).pageTable[j] = (*readyQueue[i-1]).pageTable[j];
+        }
         //(*readyQueue[i]).job_length_score = (*readyQueue[i-1]).job_length_score;
     }
     // readyQueue[0] = pPCB;
@@ -96,6 +130,12 @@ void ready_queue_add_to_front(PCB *pPCB){
     (*readyQueue[0]).start = (*pPCB).start;
     (*readyQueue[0]).end = (*pPCB).end;
     (*readyQueue[0]).pid = (*pPCB).pid;
+    (*readyQueue[0]).pageTableIndex = (*pPCB).pageTableIndex;
+    (*readyQueue[0]).frameIndex = (*pPCB).frameIndex;
+
+    for (int j = 0; j<100; j++){
+        (*readyQueue[0]).pageTable[j] = (*pPCB).pageTable[j];
+    }
     //(*readyQueue[0]).job_length_score = (*pPCB).job_length_score;
 }
 
@@ -114,9 +154,15 @@ void terminate_task_in_queue_by_index(int i){
     (*readyQueue[i]).end = -1; 
     (*readyQueue[i]).PC = -1; 
     (*readyQueue[i]).pid = NULL;
+    (*readyQueue[i]).pageTableIndex = -1; 
+    (*readyQueue[i]).frameIndex = -1; 
+
+    for (int j = 0; j<100; j++){
+        (*readyQueue[i]).pageTable[j] = -1;
+    }
     //(*readyQueue[i]).job_length_score = -1;
 }
-
+// not rly used anymore
 int myinit(const char *filename){
     FILE* fp;
     int error_code = 0;
@@ -163,6 +209,18 @@ int get_scheduling_policy_number(char* policy){
     }
 }
 
+// gives the pc change
+int handleError_pc(int error_code){
+    if(error_code < 20){
+        return 1;
+    }
+    return 2;
+}
+
+// gives the frameIndex change
+int handleError_frameIndex(int error_code){
+        return error_code % 10;
+}
 
 /*
  * Variable:  schedulingPolicy 
@@ -188,20 +246,41 @@ int scheduler(int policyNumber){
     if(policyNumber == 0 || policyNumber == 2){
         //keep running programs while ready queue is not empty
         while(ready_queue_pop(0,false).PC != -1)
-        {
+        {   
+
+            int next_frame = -1;
             PCB firstPCB = ready_queue_pop(0,false);
-            load_PCB_TO_CPU(firstPCB.PC);
+
+            //load_PCB_TO_CPU(firstPCB.PC);
+            //int error_code_load_PCB_TO_CPU = cpu_run(cpu_quanta_per_program, firstPCB.end);
+
+            // give frame
+            int pc_in_frame_store = firstPCB.pageTable[firstPCB.pageTableIndex];
+            //give next frame location for if we have to switch frames
+            if(firstPCB.pageTable[firstPCB.pageTableIndex + 1] != -1){
+                next_frame = firstPCB.pageTable[firstPCB.pageTableIndex + 1];
+            }
+            load_PCB_TO_CPU(pc_in_frame_store);   
+            //^ current line is at the ith pageTable index frame
             
-            int error_code_load_PCB_TO_CPU = cpu_run(cpu_quanta_per_program, firstPCB.end);
-            
-            if(error_code_load_PCB_TO_CPU == 2){
+            int error_code_load_PCB_TO_CPU = cpu_run(cpu_quanta_per_program, firstPCB.end, firstPCB.PC, next_frame, firstPCB.frameIndex);
+         
+            // will have to be updated
+            if(error_code_load_PCB_TO_CPU == -1){
                 //the head PCB program has been done, time to reclaim the shell mem
-                clean_mem(firstPCB.start, firstPCB.end);
+                //clean_mem(firstPCB.start, firstPCB.end);
                 ready_queue_pop(0,true);
             }
-            if(error_code_load_PCB_TO_CPU == 0){
+            
+            if(error_code_load_PCB_TO_CPU > 0){
                 //the head PCB program has finished its quanta, it need to be put to the end of ready queue
-                firstPCB.PC = cpu_get_ip();
+                firstPCB.PC = firstPCB.PC + handleError_pc(error_code_load_PCB_TO_CPU);
+                // if old frameIndex is bigger than the new one, it means we changed frames
+                if(firstPCB.frameIndex > handleError_frameIndex(error_code_load_PCB_TO_CPU)){
+                    firstPCB.pageTableIndex = firstPCB.pageTableIndex + 1;
+                }
+                firstPCB.frameIndex = handleError_frameIndex(error_code_load_PCB_TO_CPU);
+
                 ready_queue_pop(0,true);
                 ready_queue_add_to_end(&firstPCB);
             }
@@ -209,6 +288,7 @@ int scheduler(int policyNumber){
     }
 
     //scheduling policy for 1: SJF
+    /* <- not used so commented out
     if(policyNumber == 1){
         while(!is_ready_empty())
         {
@@ -234,7 +314,7 @@ int scheduler(int policyNumber){
             terminate_task_in_queue_by_index(task_index_with_the_least_lines);
         }
     }
-
+    */
     //scheduling policy for 3: Aging   <- not used so commented out
     /*
     if(policyNumber == 3){
