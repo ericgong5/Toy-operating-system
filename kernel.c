@@ -26,7 +26,7 @@ void ready_queue_initialize()
         (*readyQueue[i]).start = -1;
         (*readyQueue[i]).end = -1;
         (*readyQueue[i]).pid = NULL;
-        (*readyQueue[i]).job_length_score = -1;
+        //(*readyQueue[i]).job_length_score = -1;
     }
 }
 
@@ -37,7 +37,7 @@ void ready_queue_Empty(){
         (*readyQueue[i]).start = -1;
         (*readyQueue[i]).end = -1;
         (*readyQueue[i]).pid = NULL;
-        (*readyQueue[i]).job_length_score = -1;
+        //(*readyQueue[i]).job_length_score = -1;
     }
 }
 
@@ -58,13 +58,13 @@ PCB ready_queue_pop(int index, bool inPlace)
             (*readyQueue[i-1]).start = (*readyQueue[i]).start;
             (*readyQueue[i-1]).end = (*readyQueue[i]).end;
             (*readyQueue[i-1]).pid = (*readyQueue[i]).pid;
-            (*readyQueue[i-1]).job_length_score = (*readyQueue[i]).job_length_score;
+            //(*readyQueue[i-1]).job_length_score = (*readyQueue[i]).job_length_score;
         }
         (*readyQueue[QUEUE_LENGTH-1]).PC = -1;
         (*readyQueue[QUEUE_LENGTH-1]).start = -1;
         (*readyQueue[QUEUE_LENGTH-1]).end = -1;
         (*readyQueue[QUEUE_LENGTH-1]).pid = NULL;
-        (*readyQueue[QUEUE_LENGTH-1]).job_length_score = -1;
+        //(*readyQueue[QUEUE_LENGTH-1]).job_length_score = -1;
     }
     return head;
 }
@@ -77,7 +77,7 @@ void ready_queue_add_to_end(PCB *pPCB)
             (*readyQueue[i]).start = (*pPCB).start;
             (*readyQueue[i]).end = (*pPCB).end;
             (*readyQueue[i]).pid = (*pPCB).pid;
-            (*readyQueue[i]).job_length_score = (*pPCB).job_length_score;
+            //(*readyQueue[i]).job_length_score = (*pPCB).job_length_score;
             break;
         }
     }
@@ -89,14 +89,14 @@ void ready_queue_add_to_front(PCB *pPCB){
         (*readyQueue[i]).start = (*readyQueue[i-1]).start;
         (*readyQueue[i]).end = (*readyQueue[i-1]).end;
         (*readyQueue[i]).pid = (*readyQueue[i-1]).pid;
-        (*readyQueue[i]).job_length_score = (*readyQueue[i-1]).job_length_score;
+        //(*readyQueue[i]).job_length_score = (*readyQueue[i-1]).job_length_score;
     }
     // readyQueue[0] = pPCB;
     (*readyQueue[0]).PC = (*pPCB).PC;
     (*readyQueue[0]).start = (*pPCB).start;
     (*readyQueue[0]).end = (*pPCB).end;
     (*readyQueue[0]).pid = (*pPCB).pid;
-    (*readyQueue[0]).job_length_score = (*pPCB).job_length_score;
+    //(*readyQueue[0]).job_length_score = (*pPCB).job_length_score;
 }
 
 bool is_ready_empty(){
@@ -114,7 +114,7 @@ void terminate_task_in_queue_by_index(int i){
     (*readyQueue[i]).end = -1; 
     (*readyQueue[i]).PC = -1; 
     (*readyQueue[i]).pid = NULL;
-    (*readyQueue[i]).job_length_score = -1;
+    //(*readyQueue[i]).job_length_score = -1;
 }
 
 int myinit(const char *filename){
@@ -139,7 +139,7 @@ int myinit(const char *filename){
         return error_code;
     }
     PCB* newPCB = makePCB(*start,*end,fileID);
-    newPCB -> job_length_score = 1 + *end - *start;
+   // newPCB -> job_length_score = 1 + *end - *start;
 
     ready_queue_add_to_end(newPCB);
 
@@ -235,7 +235,8 @@ int scheduler(int policyNumber){
         }
     }
 
-    //scheduling policy for 3: Aging
+    //scheduling policy for 3: Aging   <- not used so commented out
+    /*
     if(policyNumber == 3){
         int task_index_least_job_length_score;
         int task_job_length_score = MAX_INT;
@@ -305,7 +306,7 @@ int scheduler(int policyNumber){
         
         }
     }
-
+    */
     //clean up
     ready_queue_Empty();
     cpu_empty();

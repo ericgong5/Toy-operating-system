@@ -5,29 +5,31 @@
  * Struct:  PCB 
  * --------------------
  * pid: process(task) id
- * PC: 
+ * PC: program counter, stores the line that the task is executing
  * start: the first line in shell memory that belongs to this task
  * end: the last line in shell memory that belongs to this task
  * job_length_score: for EXEC AGING use only, stores the job length score
- * 
+ *
  * pageTable: an array that stores of each frame number in the frame store
- * pageTableIndex: tracks which line inside the frame the pcb is executing
- * programCounter: tracks which lines of code that we're executing in a specific frame
+ * pageTableIndex: tracks which which element of the page table we're at
+ * frameIndex: tracks which lines of code that we're executing in a specific frame
  */
 typedef struct
 {
     char* pid;
-    int PC;
-    int start; // not contiguous so not needed
-    int end; // not contiguous so not needed
-    int job_length_score;
+    int PC;  // starts at
+    int start; // not too usefull now
+    int end; // meta data for knowing when to end process
+    //int job_length_score;  <- not used in A3
 
-    int pageTable[12]; // page table array
+    int pageTable[100]; // page table array
     int pageTableIndex;
-    int programCounter;
+    int frameIndex;
 }PCB;
 
 PCB * makePCB(int start, int end, char* pid);
 #endif
 
+
+int find_empty_page_table(PCB* pcb);
 

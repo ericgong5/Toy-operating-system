@@ -103,14 +103,13 @@ int interpreter(char* command_args[], int args_size){
 }
 
 int help(){
-
 	char help_string[] = "COMMAND			DESCRIPTION\n \
 help			Displays all the commands\n \
 quit			Exits / terminates the shell with “Bye!”\n \
 set VAR STRING		Assigns a value to shell memory\n \
 print VAR		Displays the STRING assigned to VAR\n \
 run SCRIPT.TXT		Executes the file SCRIPT.TXT\n ";
-	printf("%s\n", help_string);
+	printf("%sFrame Store Size = %d; Variable Store Size = %d\n\n", help_string, framesize, varmemsize);
 	return 0;
 }
 
@@ -195,7 +194,7 @@ int run(char* script){
     char* target_file = (char*)calloc(1,150);
 	size_t current_directory_size = 9999;
     char* temp = "/backingStore/";
-	int frame_store_index, program_counter, end_of_program;
+	int frame_store_index, program_counter;
 
 	//might bug <- works for now
 	//creates the file path for the backing store file
@@ -213,16 +212,16 @@ int run(char* script){
 	frame_store_index = find_empty_frame();
 	int end = count_file_lines(target_file);
 	// make pcb for loaded program and put in queue
-	PCB* newPCB = makePCB(frame_store_index,end,script);
+	PCB* newPCB = makePCB(0,end,script);
     ready_queue_add_to_end(newPCB);
 
 
 	// takes in pc of where it left off and end of program if pc starts at 0
-	program_counter = ready_queue_pop(0, false).PC - ready_queue_pop(0, false).start;
-	end_of_program  = ready_queue_pop(0, false).end - ready_queue_pop(0, false).start;
+	program_counter = newPCB->PC;
+	//end_of_program  = ready_queue_pop(0, false).end - ready_queue_pop(0, false).start;
 	// load the page into the frame store
 	while(1){
-		if(program_counter > end_of_program){
+		if(program_counter > newPCB->end){
 			break;
 		}
 		//do error code <- will become frame fault later
@@ -235,6 +234,13 @@ int run(char* script){
 		*/
 
 		errCode = load_frame_from_disk(frame_store_index, program_counter, script, target_file);
+		int woops = find_empty_page_table(newPCB);
+		if(woops == -1){ // means ran out of page table space <- should never happen
+			errCode = 0;
+			printf("%s\n", "ran out of page table space, should never happen!!!");
+			break;
+		}
+		newPCB->pageTable[woops] = frame_store_index;
 		if(errCode == -1){ // means reached end of file
 			errCode = 0;
 			break;
