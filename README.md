@@ -28,4 +28,8 @@ load 2 frames at start but let page fault handling up to kernel.c -> scheduler()
 
 
 
+page fault happens in 2 ways, on in the first line being executed not in memory (cpu.c handles this) or mid execution line is not in memory (kernel.c handles this)
+
+
+
 
