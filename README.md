@@ -1,6 +1,6 @@
 # comp310_A3
 
-CURRENTLY DOING 1.2.1 PART 3
+CURRENTLY DOING 1.2.2 part 3
 
 
 PC is the index of the line in the memory
@@ -26,3 +26,6 @@ edge case of if PC is out of bounds
 
 
 #571 <- for backing store testing
+
+
+promtp for resetmem 
