@@ -257,7 +257,7 @@ int run(char* script){
 int exec(char *fname1, char *fname2, char *fname3, char* policy){
 	
 	// Identical files are now permitted in A3
-	///*
+	/*
 	if(fname2!=NULL){
 		if(strcmp(fname1,fname2)==0){
 			return badcommand_same_file_name();
@@ -269,9 +269,13 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 		}
 		
 	}
-	//*/
+	*/
 
-    int error_code = 0;
+    int error_code, errCode = 0;
+	char* target_file = (char*)calloc(1,150);
+	size_t current_directory_size = 9999;
+    char* temp = "/backingStore/";
+	int frame_store_index, program_counter, end_of_program;
 
 	int policyNumber = get_scheduling_policy_number(policy);
 	if(policyNumber == 15){
@@ -279,25 +283,173 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 	}
 
     if(fname1 != NULL){
-        error_code = myinit(fname1);
+        //error_code = myinit(fname1);
+
+		//might bug <- works for now
+		//creates the file path for the backing store file
+		getcwd(target_file, current_directory_size);
+		strncat(target_file, temp, 15);
+		strncat(target_file, fname1, 999);
+
+		error_code = load_script_to_backing_store(fname1, target_file);
 		if(error_code != 0){
 			return handleError(error_code);
 		}
+
+		//find start and end for PCB 
+		frame_store_index = find_empty_frame();
+		int end = count_file_lines(target_file);
+		// make pcb for loaded program and put in queue
+		PCB* newPCB = makePCB(0, end,fname1);
+
+
+		// takes in pc of where it left off and end of program if pc starts at 0
+		program_counter = newPCB->PC;
+		// load the page into the frame store
+		//for(int k = 0; k < 2; k++){
+		while(program_counter + 1 <= newPCB->end){
+			if(program_counter + 1 > newPCB->end){
+				break;
+			}
+			//do error code <- will become frame fault later
+			frame_store_index = find_empty_frame();
+			/* prob will have to change
+			^is page fault later or assume enough space for start 2 frames
+			if( frame_store_index == -1){
+				errCode = 13; // 13 is the error code for frame out of space
+				return errCode;
+			}
+			*/
+
+			errCode = load_frame_from_disk(frame_store_index, program_counter, fname1, target_file);
+			int woops = find_empty_page_table(newPCB);
+			if(woops == -1){ // means ran out of page table space <- should never happen
+				errCode = 0;
+				printf("%s\n", "ran out of page table space fname1, should never happen!!!");
+				break;
+			}
+			newPCB->pageTable[woops] = frame_store_index;
+			if(errCode == -1){ // means reached end of file
+				errCode = 0;
+				break;
+			}
+			program_counter = program_counter + 3;
+		}
+		ready_queue_add_to_end(newPCB);
     }
     if(fname2 != NULL){
-        error_code = myinit(fname2);
+        //error_code = myinit(fname1);
+
+		//might bug <- works for now
+		//creates the file path for the backing store file
+		getcwd(target_file, current_directory_size);
+		strncat(target_file, temp, 15);
+		strncat(target_file, fname2, 999);
+
+		error_code = load_script_to_backing_store(fname2, target_file);
 		if(error_code != 0){
 			return handleError(error_code);
 		}
+
+		//find start and end for PCB 
+		frame_store_index = find_empty_frame();
+		int end = count_file_lines(target_file);
+		// make pcb for loaded program and put in queue
+		PCB* newPCB = makePCB(0, end,fname2);
+
+
+		// takes in pc of where it left off and end of program if pc starts at 0
+		program_counter = newPCB->PC;
+		// load the page into the frame store
+		//for(int k = 0; k < 2; k++){
+		while(program_counter + 1 <= newPCB->end){
+			if(program_counter + 1 > newPCB->end){
+				break;
+			}
+			//do error code <- will become frame fault later
+			frame_store_index = find_empty_frame();
+			/* prob will have to change
+			^is page fault later or assume enough space for start 2 frames
+			if( frame_store_index == -1){
+				errCode = 13; // 13 is the error code for frame out of space
+				return errCode;
+			}
+			*/
+
+			errCode = load_frame_from_disk(frame_store_index, program_counter, fname2, target_file);
+			int woops = find_empty_page_table(newPCB);
+			if(woops == -1){ // means ran out of page table space <- should never happen
+				errCode = 0;
+				printf("%s\n", "ran out of page table space fname1, should never happen!!!");
+				break;
+			}
+			newPCB->pageTable[woops] = frame_store_index;
+			if(errCode == -1){ // means reached end of file
+				errCode = 0;
+				break;
+			}
+			program_counter = program_counter + 3;
+		}
+		ready_queue_add_to_end(newPCB);
     }
     if(fname3 != NULL){
-        error_code = myinit(fname3);
+        //error_code = myinit(fname1);
+
+		//might bug <- works for now
+		//creates the file path for the backing store file
+		getcwd(target_file, current_directory_size);
+		strncat(target_file, temp, 15);
+		strncat(target_file, fname3, 999);
+
+		error_code = load_script_to_backing_store(fname3, target_file);
 		if(error_code != 0){
 			return handleError(error_code);
 		}
+
+		//find start and end for PCB 
+		frame_store_index = find_empty_frame();
+		int end = count_file_lines(target_file);
+		// make pcb for loaded program and put in queue
+		PCB* newPCB = makePCB(0, end,fname3);
+
+
+		// takes in pc of where it left off and end of program if pc starts at 0
+		program_counter = newPCB->PC;
+		// load the page into the frame store
+		//for(int k = 0; k < 2; k++){
+		while(program_counter + 1 <= newPCB->end){
+			if(program_counter + 1 > newPCB->end){
+				break;
+			}
+			//do error code <- will become frame fault later
+			frame_store_index = find_empty_frame();
+			/* prob will have to change
+			^is page fault later or assume enough space for start 2 frames
+			if( frame_store_index == -1){
+				errCode = 13; // 13 is the error code for frame out of space
+				return errCode;
+			}
+			*/
+
+			errCode = load_frame_from_disk(frame_store_index, program_counter, fname3, target_file);
+			int woops = find_empty_page_table(newPCB);
+			if(woops == -1){ // means ran out of page table space <- should never happen
+				errCode = 0;
+				printf("%s\n", "ran out of page table space fname1, should never happen!!!");
+				break;
+			}
+			newPCB->pageTable[woops] = frame_store_index;
+			if(errCode == -1){ // means reached end of file
+				errCode = 0;
+				break;
+			}
+			program_counter = program_counter + 3;
+		}
+		ready_queue_add_to_end(newPCB);
     }
     
-	scheduler(policyNumber);
+	scheduler(2);
+	free(target_file);
 	return error_code;
 }
 

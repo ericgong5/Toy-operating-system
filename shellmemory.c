@@ -3,8 +3,8 @@
 #include<stdio.h>
 #include<stdbool.h>
 
-#define SHELL_MEM_LENGTH 1000
-#define FRAME_STORE_LENGTH 30
+#define SHELL_MEM_LENGTH varmemsize
+#define FRAME_STORE_LENGTH framesize
 
 
 struct memory_struct{
