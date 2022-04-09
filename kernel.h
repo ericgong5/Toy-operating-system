@@ -12,6 +12,7 @@ int myinit(const char *filename);
 int scheduler();
 PCB ready_queue_pop(int index, bool inPlace);
 void ready_queue_add_to_end(PCB *pPCB);
+int update_pageTable_by_frameStore_index(int index);
 
 
 #endif

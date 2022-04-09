@@ -78,12 +78,33 @@ int cpu_run(int quanta, int end, int pc, int nextFrame, int frameIndex){
 
         // means have to change frame
         if(frameIndex >= 2){
-            if(nextFrame == -1){
-            printf("error in cpu.c no next frame\n");
-            return -1;
+            // would be page fault but normal termination due to quanta not executing anymore
+            if(nextFrame == -1 && aCPU.quanta - 1 == 0){
+                frameIndex = 0;            
+            }else if(nextFrame == -1){  //<- page fault
+                printf("%s\n", "had to change frame mid exec");
+                frameIndex = 0;            
+                pc += 1;
+                cnt += 1;
+                // way to report the change in pc and frameIndex
+                if(frameIndex == 0 && cnt == 1){
+                    error_code = -10;
+                }else if(frameIndex == 1 && cnt == 1){
+                    error_code = -11;
+                }else if(frameIndex == 2 && cnt == 1){
+                    error_code = -12;
+                }else if(frameIndex == 0 && cnt == 2){
+                    error_code = -20;
+                }else if(frameIndex == 1 && cnt == 2){
+                    error_code = -21;
+                }else if(frameIndex == 2 && cnt == 2){
+                    error_code = -22;
+                }
+                return error_code;
+            }else{ // normal frame switch
+                cpu_set_ip(nextFrame);
+                frameIndex = 0;            
             }
-            cpu_set_ip(nextFrame);
-            frameIndex = 0;            
         }else{
            frameIndex = frameIndex + 1;
         }
@@ -108,4 +129,5 @@ int cpu_run(int quanta, int end, int pc, int nextFrame, int frameIndex){
         error_code = 22;
     }
     return error_code;
+    
 }

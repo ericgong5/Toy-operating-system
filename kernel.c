@@ -12,6 +12,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <unistd.h>
+
 
 #define QUEUE_LENGTH 10
 #define MAX_INT 2147483646
@@ -162,6 +164,24 @@ void terminate_task_in_queue_by_index(int i){
     }
     //(*readyQueue[i]).job_length_score = -1;
 }
+
+
+int update_pageTable_by_frameStore_index(int index){
+    for(int i = 0; i < QUEUE_LENGTH; i++){
+        if((*readyQueue[i]).PC == -1){
+            // skip to next
+        }else{
+            for(int j = 0; j < 100; j++){
+                if((*readyQueue[i]).pageTable[j] == index){
+                    (*readyQueue[i]).pageTable[j] = -1;
+                    return 0;
+                }
+            }
+        }
+    }
+    return -1;
+}
+
 // not rly used anymore
 int myinit(const char *filename){
     FILE* fp;
@@ -211,7 +231,11 @@ int get_scheduling_policy_number(char* policy){
 
 // gives the pc change
 int handleError_pc(int error_code){
-    if(error_code < 20){
+    int ec = error_code;
+    if(ec < 0){
+        ec = ec * -1;
+    }
+    if(ec < 20){
         return 1;
     }
     return 2;
@@ -219,7 +243,11 @@ int handleError_pc(int error_code){
 
 // gives the frameIndex change
 int handleError_frameIndex(int error_code){
-        return error_code % 10;
+        int ec = error_code;
+        if(ec < 0){
+            ec = ec * -1;
+        }   
+        return ec % 10;
 }
 
 /*
@@ -244,47 +272,130 @@ int scheduler(int policyNumber){
 
     //scheduling logic for 0: FCFS and 2: RR
     if(policyNumber == 0 || policyNumber == 2){
-        //keep running programs while ready queue is not empty
-        while(ready_queue_pop(0,false).PC != -1)
-        {   
+        char* target_file = (char*)calloc(1,150);
+        size_t current_directory_size = 9999;
+        char* temp = "/backingStore/";
+        /*
+        printf("%s\n", frame_get_value_by_line(0));
+        printf("%s\n", frame_get_value_by_line(1));
+        printf("%s\n", frame_get_value_by_line(2));
+        printf("%s\n", frame_get_value_by_line(3));
+        printf("%s\n", frame_get_value_by_line(4));
+        printf("%s\n", frame_get_value_by_line(5));
+        printf("%s\n", frame_get_value_by_line(6));
+        printf("%s\n", frame_get_value_by_line(7));
+        printf("%s\n", frame_get_value_by_line(8));
+        printf("%s\n", frame_get_value_by_line(9));
+        printf("%s\n", frame_get_value_by_line(10));
+        printf("%s\n", frame_get_value_by_line(11));
+        printf("%s\n", frame_get_value_by_line(12));
+        printf("%s\n", frame_get_value_by_line(13));
+        printf("%s\n", frame_get_value_by_line(14));
+        printf("%s\n", frame_get_value_by_line(15));
+        printf("%s\n", frame_get_value_by_line(16));
+        printf("%s\n", frame_get_value_by_line(17));
+        */
 
+
+
+        //keep running programs while ready queue is not empty
+        while(ready_queue_pop(0,false).PC != -1){   
             int next_frame = -1;
+            int frame_store_index, errCode;
             PCB firstPCB = ready_queue_pop(0,false);
+            printf("PC is :%d\n", firstPCB.PC);
+            printf("pageTableIndex is :%d\n", firstPCB.pageTableIndex);
+            printf("frameIndex is :%d\n", firstPCB.frameIndex);
 
             //load_PCB_TO_CPU(firstPCB.PC);
             //int error_code_load_PCB_TO_CPU = cpu_run(cpu_quanta_per_program, firstPCB.end);
 
             // give frame
             int pc_in_frame_store = firstPCB.pageTable[firstPCB.pageTableIndex];
-            //give next frame location for if we have to switch frames
-            if(firstPCB.pageTable[firstPCB.pageTableIndex + 1] != -1){
-                next_frame = firstPCB.pageTable[firstPCB.pageTableIndex + 1];
-            }
-            load_PCB_TO_CPU(pc_in_frame_store);   
-            //^ current line is at the ith pageTable index frame
-            
-            int error_code_load_PCB_TO_CPU = cpu_run(cpu_quanta_per_program, firstPCB.end, firstPCB.PC, next_frame, firstPCB.frameIndex);
-         
-            // will have to be updated
-            if(error_code_load_PCB_TO_CPU == -1){
-                //the head PCB program has been done, time to reclaim the shell mem
-                //clean_mem(firstPCB.start, firstPCB.end);
-                ready_queue_pop(0,true);
-            }
-            
-            if(error_code_load_PCB_TO_CPU > 0){
-                //the head PCB program has finished its quanta, it need to be put to the end of ready queue
-                firstPCB.PC = firstPCB.PC + handleError_pc(error_code_load_PCB_TO_CPU);
-                // if old frameIndex is bigger than the new one, it means we changed frames
-                if(firstPCB.frameIndex > handleError_frameIndex(error_code_load_PCB_TO_CPU)){
-                    firstPCB.pageTableIndex = firstPCB.pageTableIndex + 1;
-                }
-                firstPCB.frameIndex = handleError_frameIndex(error_code_load_PCB_TO_CPU);
 
+            // if we try to execute first line but its not in memory
+            if(pc_in_frame_store == -1){
+                printf("%s\n", "had to change frame at initial");
+                //load next frame
+                frame_store_index = find_empty_frame();
+                //no more space in framestore
+                int index_to_be_cleaned = 0;
+                if(frame_store_index == -1){
+                    printf(" Page fault! Victim page contents: \n %s \n %s \n %s \n End of victim page contents. \n ", 
+                            frame_get_value_by_line(index_to_be_cleaned),
+                            frame_get_value_by_line(index_to_be_cleaned + 1),
+                            frame_get_value_by_line(index_to_be_cleaned + 2));
+                    clean_one_frame(index_to_be_cleaned);
+                    update_pageTable_by_frameStore_index(index_to_be_cleaned);
+                    frame_store_index = find_empty_frame();
+                }
+
+                getcwd(target_file, current_directory_size);
+                strncat(target_file, temp, 15);
+                strncat(target_file, firstPCB.pid, 999);
+
+                errCode = load_frame_from_disk(frame_store_index, firstPCB.PC, firstPCB.pid, target_file);
+                if(errCode == 11 | errCode == 12){
+		            return handleError(errCode);
+	            }
+
+                firstPCB.pageTable[firstPCB.pageTableIndex] = frame_store_index;
                 ready_queue_pop(0,true);
                 ready_queue_add_to_end(&firstPCB);
+            }else{
+                //give next frame location for if we have to switch frames
+                if(firstPCB.pageTable[firstPCB.pageTableIndex + 1] != -1){
+                    next_frame = firstPCB.pageTable[firstPCB.pageTableIndex + 1];
+                }
+                load_PCB_TO_CPU(pc_in_frame_store);   
+                //^ current line is at the ith pageTable index frame
+                
+                int error_code_load_PCB_TO_CPU = cpu_run(cpu_quanta_per_program, firstPCB.end, firstPCB.PC, next_frame, firstPCB.frameIndex);
+            
+                // will have to be updated
+                if(error_code_load_PCB_TO_CPU == -1){
+                    //the head PCB program has been done, time to reclaim the shell mem
+                    //clean_mem(firstPCB.start, firstPCB.end);
+                    ready_queue_pop(0,true);
+                }
+                // means page fault
+                if(error_code_load_PCB_TO_CPU < -1){
+                    firstPCB.PC = firstPCB.PC + handleError_pc(error_code_load_PCB_TO_CPU);
+                    // if old frameIndex is bigger than the new one, it means we changed frames
+                    firstPCB.pageTableIndex = firstPCB.pageTableIndex + 1;
+                    firstPCB.frameIndex = handleError_frameIndex(error_code_load_PCB_TO_CPU);
+                    //load next frame
+                    frame_store_index = find_empty_frame();
+
+                    getcwd(target_file, current_directory_size);
+                    strncat(target_file, temp, 15);
+                    strncat(target_file, firstPCB.pid, 999);
+
+                    errCode = load_frame_from_disk(frame_store_index, firstPCB.PC, firstPCB.pid, target_file);
+                    if(errCode == 11 | errCode == 12){
+                        return handleError(errCode);
+                    }
+
+                    firstPCB.pageTable[firstPCB.pageTableIndex] = frame_store_index;
+                    ready_queue_pop(0,true);
+                    ready_queue_add_to_end(&firstPCB);
+                }
+                
+                if(error_code_load_PCB_TO_CPU > 0){
+                    //the head PCB program has finished its quanta, it need to be put to the end of ready queue
+                    firstPCB.PC = firstPCB.PC + handleError_pc(error_code_load_PCB_TO_CPU);
+                    // if old frameIndex is bigger than the new one, it means we changed frames
+                    if(firstPCB.frameIndex > handleError_frameIndex(error_code_load_PCB_TO_CPU)){
+                        firstPCB.pageTableIndex = firstPCB.pageTableIndex + 1;
+                    }
+                    firstPCB.frameIndex = handleError_frameIndex(error_code_load_PCB_TO_CPU);
+
+                    ready_queue_pop(0,true);
+                    ready_queue_add_to_end(&firstPCB);
+                }
             }
         }
+        free(target_file);
     }
 
     //scheduling policy for 1: SJF

@@ -11,3 +11,4 @@ void clean_all_mem();
 int find_empty_frame();
 int load_frame_from_disk(int frame_line, int program_counter, const char *filename, const char *filepath);
 char *frame_get_value_by_line(int line);
+void clean_one_frame(int start);
