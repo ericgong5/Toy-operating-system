@@ -275,53 +275,25 @@ int scheduler(int policyNumber){
         char* target_file = (char*)calloc(1,150);
         size_t current_directory_size = 9999;
         char* temp = "/backingStore/";
-        /*
-        printf("%s\n", frame_get_value_by_line(0));
-        printf("%s\n", frame_get_value_by_line(1));
-        printf("%s\n", frame_get_value_by_line(2));
-        printf("%s\n", frame_get_value_by_line(3));
-        printf("%s\n", frame_get_value_by_line(4));
-        printf("%s\n", frame_get_value_by_line(5));
-        printf("%s\n", frame_get_value_by_line(6));
-        printf("%s\n", frame_get_value_by_line(7));
-        printf("%s\n", frame_get_value_by_line(8));
-        printf("%s\n", frame_get_value_by_line(9));
-        printf("%s\n", frame_get_value_by_line(10));
-        printf("%s\n", frame_get_value_by_line(11));
-        printf("%s\n", frame_get_value_by_line(12));
-        printf("%s\n", frame_get_value_by_line(13));
-        printf("%s\n", frame_get_value_by_line(14));
-        printf("%s\n", frame_get_value_by_line(15));
-        printf("%s\n", frame_get_value_by_line(16));
-        printf("%s\n", frame_get_value_by_line(17));
-        */
-
-
-
+       
         //keep running programs while ready queue is not empty
         while(ready_queue_pop(0,false).PC != -1){   
+
             int next_frame = -1;
             int frame_store_index, errCode;
             PCB firstPCB = ready_queue_pop(0,false);
-            printf("PC is :%d\n", firstPCB.PC);
-            printf("pageTableIndex is :%d\n", firstPCB.pageTableIndex);
-            printf("frameIndex is :%d\n", firstPCB.frameIndex);
-
-            //load_PCB_TO_CPU(firstPCB.PC);
-            //int error_code_load_PCB_TO_CPU = cpu_run(cpu_quanta_per_program, firstPCB.end);
 
             // give frame
             int pc_in_frame_store = firstPCB.pageTable[firstPCB.pageTableIndex];
 
             // if we try to execute first line but its not in memory
             if(pc_in_frame_store == -1){
-                printf("%s\n", "had to change frame at initial");
                 //load next frame
                 frame_store_index = find_empty_frame();
                 //no more space in framestore
                 int index_to_be_cleaned = 0;
                 if(frame_store_index == -1){
-                    printf(" Page fault! Victim page contents: \n %s \n %s \n %s \n End of victim page contents. \n ", 
+                    printf("Page fault! Victim page contents:\n%s%s%sEnd of victim page contents.\n", 
                             frame_get_value_by_line(index_to_be_cleaned),
                             frame_get_value_by_line(index_to_be_cleaned + 1),
                             frame_get_value_by_line(index_to_be_cleaned + 2));
@@ -355,7 +327,6 @@ int scheduler(int policyNumber){
                 // will have to be updated
                 if(error_code_load_PCB_TO_CPU == -1){
                     //the head PCB program has been done, time to reclaim the shell mem
-                    //clean_mem(firstPCB.start, firstPCB.end);
                     ready_queue_pop(0,true);
                 }
                 // means page fault in run time

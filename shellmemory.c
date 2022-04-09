@@ -117,25 +117,25 @@ int find_empty_frame(){
 // frame_line = index in frame store where to add frame
 // program_counter = line of next program to be loaded (starts at 0)
 // filename = name of file in backing store to be loaded from 
-int load_frame_from_disk(int frame_line, int program_counter, const char *filename, const char *filepath){
-	int errCode = 0;
+int load_frame_from_disk(int frame_line, int program_counter, char *filename, char *filepath){
+	int errorCode = 0;
 	FILE* target_file;
-    char line[SHELL_MEM_LENGTH];
-
+    char line[999];
 	target_file = fopen(filepath, "rt");
     if(target_file == NULL){
-        errCode = 12; // 11 is the error code for file does not exist
-        return errCode;
+        errorCode = 12; // 11 is the error code for file does not exist
+        return errorCode;
     }
 
 	//skip to the line that we want
 	for(int i = 0; i < program_counter;i++){
         fgets(line, 999, target_file);
 	}
+
 	//copy line into frame store
 	for(int j = frame_line; j < frame_line + 3; j++){
 		if(feof(target_file)){
-			errCode = -1; // out of lines to copy
+			errorCode = -1; // out of lines to copy
             break;
         }else{
 			fgets(line, 999, target_file);
@@ -143,8 +143,9 @@ int load_frame_from_disk(int frame_line, int program_counter, const char *filena
     		framestore[j].value = strdup(line);
 		}
 	}
+
 	fclose(target_file);
-	return errCode;
+	return errorCode;
 }
 
 void frame_set_value(char *var_in, char *value_in) {

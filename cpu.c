@@ -69,12 +69,6 @@ int cpu_run(int quanta, int end, int pc, int nextFrame, int frameIndex){
             error_code = -1;
             return error_code;
         }
-        /*  old code
-        if(end == aCPU.IP){
-            error_code = 2;
-            return error_code;
-        }
-        */
 
         // means have to change frame
         if(frameIndex >= 2){
@@ -82,7 +76,6 @@ int cpu_run(int quanta, int end, int pc, int nextFrame, int frameIndex){
             if(nextFrame == -1 && aCPU.quanta - 1 == 0){
                 frameIndex = 0;            
             }else if(nextFrame == -1){  //<- page fault
-                printf("%s\n", "had to change frame mid exec");
                 frameIndex = 0;            
                 pc += 1;
                 cnt += 1;
@@ -108,7 +101,6 @@ int cpu_run(int quanta, int end, int pc, int nextFrame, int frameIndex){
         }else{
            frameIndex = frameIndex + 1;
         }
-        //aCPU.IP = aCPU.IP + 1; // prob have to change
         aCPU.quanta -= 1;
         pc += 1;
         cnt += 1;

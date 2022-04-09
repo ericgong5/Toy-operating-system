@@ -257,26 +257,7 @@ int run(char* script){
 }
 
 int exec(char *fname1, char *fname2, char *fname3, char* policy){
-	
-	// Identical files are now permitted in A3
-	/*
-	if(fname2!=NULL){
-		if(strcmp(fname1,fname2)==0){
-			return badcommand_same_file_name();
-		}
-	}
-	if(fname3!=NULL){
-		if(strcmp(fname1,fname3)==0 || strcmp(fname2,fname3)==0){
-			return badcommand_same_file_name();
-		}
-		
-	}
-	*/
-
-    int error_code, errCode = 0;
-	char* target_file = (char*)calloc(1,150);
-	size_t current_directory_size = 9999;
-    char* temp = "/backingStore/";
+    int error_code = 0;
 	int frame_store_index, program_counter, end_of_program;
 
 	int policyNumber = get_scheduling_policy_number(policy);
@@ -286,7 +267,10 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 
     if(fname1 != NULL){
         //error_code = myinit(fname1);
-
+		int errCode = 0;
+		char* target_file = (char*)calloc(1,150);
+		size_t current_directory_size = 9999;
+		char* temp = "/backingStore/";
 		//might bug <- works for now
 		//creates the file path for the backing store file
 		getcwd(target_file, current_directory_size);
@@ -313,16 +297,8 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 			if(program_counter + 1 > newPCB->end){
 				break;
 			}
-			//do error code <- will become frame fault later
 			frame_store_index = find_empty_frame();
-			/* prob will have to change
-			^is page fault later or assume enough space for start 2 frames
-			if( frame_store_index == -1){
-				errCode = 13; // 13 is the error code for frame out of space
-				return errCode;
-			}
-			*/
-
+			
 			errCode = load_frame_from_disk(frame_store_index, program_counter, fname1, target_file);
 			int woops = find_empty_page_table(newPCB);
 			if(woops == -1){ // means ran out of page table space <- should never happen
@@ -338,10 +314,14 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 			program_counter = program_counter + 3;
 		}
 		ready_queue_add_to_end(newPCB);
+		free(target_file);
     }
     if(fname2 != NULL){
         //error_code = myinit(fname1);
-
+		int errCode = 0;
+		char* target_file = (char*)calloc(1,150);
+		size_t current_directory_size = 9999;
+		char* temp = "/backingStore/";
 		//might bug <- works for now
 		//creates the file path for the backing store file
 		getcwd(target_file, current_directory_size);
@@ -364,37 +344,42 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 		program_counter = newPCB->PC;
 		// load the page into the frame store
 		//while(program_counter + 1 <= newPCB->end){
+
 		for(int k = 0; k < 2; k++){
+							            	//printf("%s\n", "hi");
+
 			if(program_counter + 1 > newPCB->end){
 				break;
 			}
 			//do error code <- will become frame fault later
 			frame_store_index = find_empty_frame();
-			/* prob will have to change
-			^is page fault later or assume enough space for start 2 frames
-			if( frame_store_index == -1){
-				errCode = 13; // 13 is the error code for frame out of space
-				return errCode;
-			}
-			*/
-
 			errCode = load_frame_from_disk(frame_store_index, program_counter, fname2, target_file);
+
 			int woops = find_empty_page_table(newPCB);
 			if(woops == -1){ // means ran out of page table space <- should never happen
 				errCode = 0;
 				printf("%s\n", "ran out of page table space fname1, should never happen!!!");
 				break;
 			}
+
 			newPCB->pageTable[woops] = frame_store_index;
+
 			if(errCode == -1){ // means reached end of file
 				errCode = 0;
 				break;
 			}
 			program_counter = program_counter + 3;
 		}
+
 		ready_queue_add_to_end(newPCB);
+		free(target_file);
     }
     if(fname3 != NULL){
+		int errCode = 0;
+		char* target_file = (char*)calloc(1,150);
+		size_t current_directory_size = 9999;
+    	char* temp = "/backingStore/";
+
         //error_code = myinit(fname1);
 
 		//might bug <- works for now
@@ -423,16 +408,7 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 			if(program_counter + 1 > newPCB->end){
 				break;
 			}
-			//do error code <- will become frame fault later
 			frame_store_index = find_empty_frame();
-			/* prob will have to change
-			^is page fault later or assume enough space for start 2 frames
-			if( frame_store_index == -1){
-				errCode = 13; // 13 is the error code for frame out of space
-				return errCode;
-			}
-			*/
-
 			errCode = load_frame_from_disk(frame_store_index, program_counter, fname3, target_file);
 			int woops = find_empty_page_table(newPCB);
 			if(woops == -1){ // means ran out of page table space <- should never happen
@@ -448,10 +424,10 @@ int exec(char *fname1, char *fname2, char *fname3, char* policy){
 			program_counter = program_counter + 3;
 		}
 		ready_queue_add_to_end(newPCB);
+		free(target_file);
     }
-    
+
 	scheduler(2);
-	free(target_file);
 	return error_code;
 }
 
