@@ -358,7 +358,7 @@ int scheduler(int policyNumber){
                     //clean_mem(firstPCB.start, firstPCB.end);
                     ready_queue_pop(0,true);
                 }
-                // means page fault
+                // means page fault in run time
                 if(error_code_load_PCB_TO_CPU < -1){
                     firstPCB.PC = firstPCB.PC + handleError_pc(error_code_load_PCB_TO_CPU);
                     // if old frameIndex is bigger than the new one, it means we changed frames
@@ -367,6 +367,17 @@ int scheduler(int policyNumber){
                     //load next frame
                     frame_store_index = find_empty_frame();
 
+                    // if frameStore is full
+                    int index_to_be_cleaned = 0;
+                    if(frame_store_index == -1){
+                        printf(" Page fault! Victim page contents: \n %s \n %s \n %s \n End of victim page contents. \n ", 
+                                frame_get_value_by_line(index_to_be_cleaned),
+                                frame_get_value_by_line(index_to_be_cleaned + 1),
+                                frame_get_value_by_line(index_to_be_cleaned + 2));
+                        clean_one_frame(index_to_be_cleaned);
+                        update_pageTable_by_frameStore_index(index_to_be_cleaned);
+                        frame_store_index = find_empty_frame();
+                    }
                     getcwd(target_file, current_directory_size);
                     strncat(target_file, temp, 15);
                     strncat(target_file, firstPCB.pid, 999);
